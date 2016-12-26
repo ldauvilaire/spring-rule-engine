@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans SYSTEM "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<!-- Spring context for simple Rule Engine -->
+<!-- by Mikhail Garber -->
+
+<beans>
+	<!-- rule engine processor -->
+	<bean id="SharkysExpressLoansApplicationProcessor" class="SpringRuleEngine">
+		<property name="firstStep">
+			<ref bean="ValidApplicationRule"/>
+		</property>
+	</bean>
+	
+	<!-- persistence service -->
+	<bean id="LoanApplicationPersistenceService" class="MockLoanApplicationPersistence"/>
+	
+	<!-- rejection -->
+	<bean id="RejectionAction" class="ProcessRejectionAction">
+		<property name="persistenceService">
+			<ref bean="LoanApplicationPersistenceService"/>
+		</property>
+	</bean>
+	
+	<!-- approval -->
+	<bean id="ApprovalAction" class="ProcessApprovalAction">
+		<property name="persistenceService">
+			<ref bean="LoanApplicationPersistenceService"/>
+		</property>
+	</bean>
+	
+	<!-- check income/expense ratio -->
+	<bean id="ValidIncomeExpenseRatioRule" class="ValidIncomeExpenseRatioRule">
+		<property name="validRatio">
+			<value>0.70</value>
+		</property>
+		<property name="positiveOutcomeStep">
+			<ref bean="ApprovalAction"/>
+		</property>
+		<property name="negativeOutcomeStep">
+			<ref bean="RejectionAction"/>
+		</property>
+	</bean>
+	
+	<!-- check valid state -->
+	<bean id="ValidStateRule" class="ValidStateRule">
+		<property name="validStates">
+			<list>
+				<value>TX</value>
+				<value>MI</value>
+			</list>
+		</property>
+		<property name="positiveOutcomeStep">
+			<ref bean="ValidIncomeExpenseRatioRule"/>
+		</property>
+		<property name="negativeOutcomeStep">
+			<ref bean="RejectionAction"></ref>
+		</property>
+	</bean>
+	
+	<!-- validation -->
+	<bean id="ValidApplicationRule" class="ValidApplicationRule">
+		<property name="positiveOutcomeStep">
+			<ref bean="ValidStateRule"/>
+		</property>
+		<property name="negativeOutcomeStep">
+			<ref bean="RejectionAction"></ref>
+		</property>		
+	</bean>
+</beans>
